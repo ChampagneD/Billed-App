@@ -24,6 +24,8 @@ export default class NewBill {
     //   Nous verifions ici le format de l'image
     const validFormat = ["image/jpeg", "image/jpg", "image/png"];
     let fileFormatIsOk = validFormat.includes(file.type);
+    let errorTypeFile = this.document.querySelector(".error-type-file");
+    let btn = this.document.getElementById("btn-send-bill");
 
     //Condition = format de l'image respecter = poursuite
     if (fileFormatIsOk) {
@@ -48,15 +50,17 @@ export default class NewBill {
           this.fileName = fileName;
         })
         .catch((error) => console.error(error));
+      btn.type = "submit";
+    } else {
+      errorTypeFile.textContent =
+        "Veuillez soumettre un type de fichier valide (jpeg, jpg, png)";
+      btn.type = "button";
     }
   };
 
   handleSubmit = (e) => {
     e.preventDefault();
-    console.log(
-      'e.target.querySelector(`input[data-testid="datepicker"]`).value',
-      e.target.querySelector(`input[data-testid="datepicker"]`).value
-    );
+
     const email = JSON.parse(localStorage.getItem("user")).email;
     const bill = {
       email,
