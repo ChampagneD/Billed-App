@@ -5,9 +5,9 @@ import "@testing-library/jest-dom";
 import { fireEvent, screen } from "@testing-library/dom";
 import NewBillUI from "../views/NewBillUI.js";
 import NewBill from "../containers/NewBill.js";
-import BillsUI from "../views/BillsUI.js";
 import { localStorageMock } from "../__mocks__/localStorage.js";
-import { ROUTES } from "../constants/routes.js";
+import { ROUTES, ROUTES_PATH } from "../constants/routes.js";
+import router from "../app/Router.js";
 import mockStore from "../__mocks__/store";
 
 describe("Given I am connected as an employee", () => {
@@ -79,5 +79,50 @@ describe("Given I am connected as an employee, When I upload a file", () => {
     // On verifie que la fonction handleSubmit a été appelée et que le texte attendu est affiché sur la page
     expect(handleSubmitTest).toHaveBeenCalled();
     expect(screen.getByText("Mes notes de frais")).toBeTruthy();
+  });
+
+  test("fetches messages from an API and fails with 500 message error", async () => {
+    jest.spyOn(mockStore, "bills");
+
+    Object.defineProperty(window, "localStorage", {
+      value: localStorageMock,
+    });
+
+    Object.defineProperty(window, "location", {
+      value: { hash: ROUTES_PATH["NewBill"] },
+    });
+
+    window.localStorage.setItem("user", JSON.stringify({ type: "Employee" }));
+    document.body.innerHTML = `<div id="root"></div>`;
+    router();
+
+    window.onNavigate(ROUTES_PATH.NewBill);
+
+    const newBillContainer = new NewBill({
+      document,
+      onNavigate,
+      store: mockStore,
+      localStorage: window.localStorage,
+    });
+
+    mockStore.bills.mockImplementationOnce(() => {
+      return {
+        update: () => {
+          return Promise.reject(new Error("Erreur 500"));
+        },
+      };
+    });
+
+    const event = {
+      preventDefault: jest.fn(),
+    };
+
+    const form = screen.getByTestId("form-new-bill");
+    const handleSubmit = jest.fn((event) =>
+      newBillContainer.handleSubmit(event)
+    );
+    form.addEventListener("submit", handleSubmit);
+    fireEvent.submit(form);
+    await new Promise(process.nextTick);
   });
 });
